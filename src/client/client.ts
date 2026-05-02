@@ -17,6 +17,31 @@ import { getFiberSource } from './fiber.js';
 
 const ENDPOINT = '/__clickedit/edit';
 
+/**
+ * Resolve the Vite dev-server origin. In Laravel + Inertia setups the page
+ * itself is served by Laravel (e.g. landmark-realestate.test), but our
+ * middleware is registered on the Vite dev server (localhost:5173). We
+ * detect the Vite origin by finding any script tag that points at it.
+ */
+function getViteOrigin(): string {
+    const scripts = document.querySelectorAll<HTMLScriptElement>('script[src]');
+    for (const s of scripts) {
+        const src = s.src || '';
+        if (
+            src.includes('/@vite/client')
+            || src.includes('/@id/')
+            || src.includes('/@fs/')
+            || src.match(/:51[7-9]\d\//)
+            || src.match(/:5\d{3}\//)
+        ) {
+            try { return new URL(src).origin; } catch {}
+        }
+    }
+    return location.origin;
+}
+
+const VITE_ORIGIN = getViteOrigin();
+
 interface CapturedElement {
     el: HTMLElement;
     file?: string;
@@ -248,13 +273,16 @@ function openModal() {
     }
     closeModal();
 
-    // Pause pick mode while modal is open so clicks in the modal don't toggle selection
+    // Pause pick mode while modal is open — restore cursor to normal across
+    // the whole page (user is in "submission" mode now, not "picking" mode).
     const wasPickMode = pickMode;
     if (wasPickMode) {
         document.removeEventListener('mousemove', onHover, true);
         document.removeEventListener('click', onPick, true);
         if (highlight) highlight.style.display = 'none';
+        document.documentElement.classList.remove('ce-picking');
     }
+    document.documentElement.classList.add('ce-modal-open');
 
     const modal = document.createElement('div');
     modal.id = 'clickedit-modal';
@@ -317,11 +345,13 @@ function openModal() {
 
     const close = () => {
         closeModal();
+        document.documentElement.classList.remove('ce-modal-open');
         // Resume pick mode if we paused it
         if (wasPickMode) {
             document.addEventListener('mousemove', onHover, true);
             document.addEventListener('click', onPick, true);
             if (highlight) highlight.style.display = 'block';
+            document.documentElement.classList.add('ce-picking');
         }
     };
     modal.querySelector('.ce-btn-x')!.addEventListener('click', close);
@@ -384,7 +414,7 @@ async function sendEdit(prompt: string, submitBtn: HTMLButtonElement, output: HT
     };
 
     try {
-        const res = await fetch(ENDPOINT, {
+        const res = await fetch(VITE_ORIGIN + ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

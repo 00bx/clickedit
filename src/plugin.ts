@@ -56,6 +56,23 @@ export function clickedit(options: ClickEditOptions = {}): Plugin {
         },
 
         configureServer(server: ViteDevServer) {
+            // Universal CORS for our endpoints — pages may be served by Laravel
+            // (different origin) while the plugin lives on Vite's dev server.
+            const cors = (req: any, res: any, next: () => void) => {
+                if (req.url?.startsWith('/__clickedit/')) {
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+                    if (req.method === 'OPTIONS') {
+                        res.statusCode = 204;
+                        res.end();
+                        return;
+                    }
+                }
+                next();
+            };
+            server.middlewares.use(cors);
+
             // Health probe
             server.middlewares.use(PING_ENDPOINT, (_req, res) => {
                 res.setHeader('Content-Type', 'application/json');

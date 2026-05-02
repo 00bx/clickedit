@@ -63,8 +63,16 @@ const CSS = `
 }
 .ce-close:hover { background: rgba(255,255,255,0.08); color: #fff; border: none; }
 
-/* Pick mode cursor + element highlight */
+/* Pick mode cursor + element highlight — excludes our own UI so the user
+   doesn't see a crosshair when hovering the toolbar / modal. */
 html.ce-picking, html.ce-picking * { cursor: crosshair !important; }
+html.ce-picking #clickedit-toolbar,
+html.ce-picking #clickedit-toolbar *,
+html.ce-picking #clickedit-modal,
+html.ce-picking #clickedit-modal * { cursor: auto !important; }
+html.ce-picking textarea, html.ce-picking input, html.ce-picking [contenteditable] { cursor: auto !important; }
+html.ce-modal-open, html.ce-modal-open *,
+html.ce-modal-open #clickedit-toolbar, html.ce-modal-open #clickedit-toolbar * { cursor: auto !important; }
 .ce-highlight {
     position: absolute; top: 0; left: 0;
     pointer-events: none; z-index: 2147483641;
