@@ -1,23 +1,40 @@
-"use strict";(()=>{var I=`
-/* Reset the wrapper but NOT children \u2014 children get explicit styles below.
-   This avoids "all: initial" cascading weird defaults onto the textarea. */
-#clickedit-toolbar, #clickedit-modal { all: revert; }
-#clickedit-toolbar *, #clickedit-modal * {
+"use strict";(()=>{var D=`
+/* No "all: revert" / "all: initial" reset \u2014 those use ID-level specificity
+   which overrides our own class rules and breaks the toolbar's positioning.
+   Instead every rule below is element-specific + !important so host CSS
+   can't bleed in. */
+#clickedit-toolbar, #clickedit-toolbar *,
+#clickedit-modal,   #clickedit-modal * {
     box-sizing: border-box !important;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
     line-height: 1.4 !important;
 }
 
-.ce-toolbar {
-    position: fixed; bottom: 16px; right: 16px; z-index: 2147483640;
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 4px;
-    background: rgba(20, 22, 28, 0.92);
+#clickedit-toolbar {
+    position: fixed !important;
+    bottom: 16px !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: 2147483640 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    margin: 0 !important;
+    background: rgba(20, 22, 28, 0.92) !important;
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.45), inset 0 1px 0 0 rgba(255,255,255,0.08);
-    color: #fff; font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.45), inset 0 1px 0 0 rgba(255,255,255,0.08) !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
 }
 
 .ce-btn {
@@ -289,7 +306,7 @@ button.ce-submit:disabled { opacity: 0.5 !important; cursor: progress !important
     word-break: break-word !important;
 }
 .ce-output:empty { display: none !important; }
-`;function $(){if(document.getElementById("clickedit-styles"))return;let t=document.createElement("style");t.id="clickedit-styles",t.textContent=I,document.head.appendChild(t)}function H(t){let e=t;for(;e;){let i=R(e);for(;i;){let a=i._debugSource;if(a&&a.fileName)return{fileName:a.fileName,lineNumber:a.lineNumber,columnNumber:a.columnNumber};i=i._debugOwner??i.return??null}e=e.parentElement}return null}function R(t){let e=Object.keys(t).find(n=>n.startsWith("__reactFiber$")||n.startsWith("__reactInternalInstance$"));return e?t[e]:null}var F="/__clickedit/edit",g=!1,s=null,E=null,r=[],d=new Map;function z(){window.__CLICKEDIT_LOADED__||(window.__CLICKEDIT_LOADED__=!0,$(),P(),O())}function P(){try{localStorage.removeItem("clickedit:enabled")}catch{}try{sessionStorage.removeItem("clickedit:hidden")}catch{}let t=document.createElement("div");t.id="clickedit-toolbar",t.className="ce-toolbar",t.innerHTML=`
+`;function $(){if(document.getElementById("clickedit-styles"))return;let t=document.createElement("style");t.id="clickedit-styles",t.textContent=D,document.head.appendChild(t)}function H(t){let e=t;for(;e;){let i=F(e);for(;i;){let a=i._debugSource;if(a&&a.fileName)return{fileName:a.fileName,lineNumber:a.lineNumber,columnNumber:a.columnNumber};i=i._debugOwner??i.return??null}e=e.parentElement}return null}function F(t){let e=Object.keys(t).find(n=>n.startsWith("__reactFiber$")||n.startsWith("__reactInternalInstance$"));return e?t[e]:null}var R="/__clickedit/edit",g=!1,s=null,E=null,r=[],d=new Map;function z(){window.__CLICKEDIT_LOADED__||(window.__CLICKEDIT_LOADED__=!0,$(),I(),q())}function I(){try{localStorage.removeItem("clickedit:enabled")}catch{}try{sessionStorage.removeItem("clickedit:hidden")}catch{}let t=document.createElement("div");t.id="clickedit-toolbar",t.className="ce-toolbar",t.innerHTML=`
         <button class="ce-btn ce-pick" title="Pick elements  (\u2318\u21E7E) \u2014 click to add/remove, \u2325P to send">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
             <span>Edit</span>
@@ -299,7 +316,7 @@ button.ce-submit:disabled { opacity: 0.5 !important; cursor: progress !important
             <span>Prompt</span>
         </button>
         <button class="ce-btn ce-close" title="Hide toolbar">\xD7</button>
-    `,document.body.appendChild(t),t.querySelector(".ce-pick").addEventListener("click",()=>g?L():D()),t.querySelector(".ce-prompt-now").addEventListener("click",()=>{r.length>0&&S()}),t.querySelector(".ce-close").addEventListener("click",()=>t.remove())}function j(){document.getElementById("clickedit-toolbar")||P()}function M(){let t=r.length,e=document.querySelector(".ce-count"),n=document.querySelector(".ce-prompt-now");e&&(e.setAttribute("data-count",String(t)),e.textContent=t>0?String(t):""),n&&(n.style.display=t>0?"":"none")}function O(){window.addEventListener("keydown",t=>{if((t.metaKey||t.ctrlKey)&&t.shiftKey&&t.key.toLowerCase()==="e"){t.preventDefault(),g?L():D();return}if(t.altKey&&(t.code==="KeyP"||t.key==="\u03C0"||t.key.toLowerCase()==="p")){r.length>0&&(t.preventDefault(),S());return}if(t.key==="Escape"){if(document.getElementById("clickedit-modal"))return;g?(L(),N()):r.length>0&&N()}})}function D(){j(),!g&&(g=!0,document.documentElement.classList.add("ce-picking"),s||(s=document.createElement("div"),s.className="ce-highlight",document.body.appendChild(s)),s.style.display="block",document.addEventListener("mousemove",k,!0),document.addEventListener("click",w,!0))}function L(){g=!1,document.documentElement.classList.remove("ce-picking"),s&&(s.style.display="none"),E=null,document.removeEventListener("mousemove",k,!0),document.removeEventListener("click",w,!0)}function k(t){let e=t.target;if(!e||e===E||e.closest("#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker"))return;E=e;let n=e.getBoundingClientRect();s&&(s.style.transform=`translate(${n.left+window.scrollX}px, ${n.top+window.scrollY}px)`,s.style.width=`${n.width}px`,s.style.height=`${n.height}px`)}function w(t){t.preventDefault(),t.stopPropagation();let e=t.target;if(e.closest("#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker"))return;let n=r.findIndex(i=>i.el===e);n>=0?(r.splice(n,1),d.get(e)?.remove(),d.delete(e)):(r.push(K(e)),q(e)),M()}function q(t){let e=t.getBoundingClientRect(),n=document.createElement("div");n.className="ce-marker",n.dataset.index=String(r.length),n.style.transform=`translate(${e.left+window.scrollX}px, ${e.top+window.scrollY}px)`,n.style.width=`${e.width}px`,n.style.height=`${e.height}px`,n.innerHTML=`<span class="ce-marker-badge">${r.length}</span>`,document.body.appendChild(n),d.set(t,n)}function N(){r.length=0,d.forEach(t=>t.remove()),d.clear(),M()}function K(t){let e=H(t);return{el:t,file:e?.fileName,line:e?.lineNumber,column:e?.columnNumber,tag:t.tagName.toLowerCase(),classes:t.className?.toString()??"",text:(t.textContent??"").trim().slice(0,200),outerHtml:t.outerHTML.slice(0,1500),rect:t.getBoundingClientRect()}}function S(){if(r.length===0)return;_();let t=g;t&&(document.removeEventListener("mousemove",k,!0),document.removeEventListener("click",w,!0),s&&(s.style.display="none"));let e=document.createElement("div");e.id="clickedit-modal",e.className="ce-modal";let n=r.map((o,m)=>{let l=o.file?x(Y(o.file))+(o.line?`:${o.line}`:""):'<span class="ce-muted">(file unknown \u2014 Claude will locate by classes/text)</span>';return`
+    `,document.body.appendChild(t),t.querySelector(".ce-pick").addEventListener("click",()=>g?L():P()),t.querySelector(".ce-prompt-now").addEventListener("click",()=>{r.length>0&&M()}),t.querySelector(".ce-close").addEventListener("click",()=>t.remove())}function j(){document.getElementById("clickedit-toolbar")||I()}function S(){let t=r.length,e=document.querySelector(".ce-count"),n=document.querySelector(".ce-prompt-now");e&&(e.setAttribute("data-count",String(t)),e.textContent=t>0?String(t):""),n&&(n.style.display=t>0?"":"none")}function q(){window.addEventListener("keydown",t=>{if((t.metaKey||t.ctrlKey)&&t.shiftKey&&t.key.toLowerCase()==="e"){t.preventDefault(),g?L():P();return}if(t.altKey&&(t.code==="KeyP"||t.key==="\u03C0"||t.key.toLowerCase()==="p")){r.length>0&&(t.preventDefault(),M());return}if(t.key==="Escape"){if(document.getElementById("clickedit-modal"))return;g?(L(),N()):r.length>0&&N()}})}function P(){j(),!g&&(g=!0,document.documentElement.classList.add("ce-picking"),s||(s=document.createElement("div"),s.className="ce-highlight",document.body.appendChild(s)),s.style.display="block",document.addEventListener("mousemove",k,!0),document.addEventListener("click",w,!0))}function L(){g=!1,document.documentElement.classList.remove("ce-picking"),s&&(s.style.display="none"),E=null,document.removeEventListener("mousemove",k,!0),document.removeEventListener("click",w,!0)}function k(t){let e=t.target;if(!e||e===E||e.closest("#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker"))return;E=e;let n=e.getBoundingClientRect();s&&(s.style.transform=`translate(${n.left+window.scrollX}px, ${n.top+window.scrollY}px)`,s.style.width=`${n.width}px`,s.style.height=`${n.height}px`)}function w(t){t.preventDefault(),t.stopPropagation();let e=t.target;if(e.closest("#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker"))return;let n=r.findIndex(i=>i.el===e);n>=0?(r.splice(n,1),d.get(e)?.remove(),d.delete(e)):(r.push(K(e)),O(e)),S()}function O(t){let e=t.getBoundingClientRect(),n=document.createElement("div");n.className="ce-marker",n.dataset.index=String(r.length),n.style.transform=`translate(${e.left+window.scrollX}px, ${e.top+window.scrollY}px)`,n.style.width=`${e.width}px`,n.style.height=`${e.height}px`,n.innerHTML=`<span class="ce-marker-badge">${r.length}</span>`,document.body.appendChild(n),d.set(t,n)}function N(){r.length=0,d.forEach(t=>t.remove()),d.clear(),S()}function K(t){let e=H(t);return{el:t,file:e?.fileName,line:e?.lineNumber,column:e?.columnNumber,tag:t.tagName.toLowerCase(),classes:t.className?.toString()??"",text:(t.textContent??"").trim().slice(0,200),outerHtml:t.outerHTML.slice(0,1500),rect:t.getBoundingClientRect()}}function M(){if(r.length===0)return;_();let t=g;t&&(document.removeEventListener("mousemove",k,!0),document.removeEventListener("click",w,!0),s&&(s.style.display="none"));let e=document.createElement("div");e.id="clickedit-modal",e.className="ce-modal";let n=r.map((o,m)=>{let l=o.file?x(Y(o.file))+(o.line?`:${o.line}`:""):'<span class="ce-muted">(file unknown \u2014 Claude will locate by classes/text)</span>';return`
             <div class="ce-target-block">
                 <div class="ce-target-head">
                     <span class="ce-target-num">${m+1}</span>
@@ -337,8 +354,8 @@ button.ce-submit:disabled { opacity: 0.5 !important; cursor: progress !important
 
             <div class="ce-output" hidden></div>
         </div>
-    `,document.body.appendChild(e);let i=e.querySelector(".ce-prompt"),a=e.querySelector(".ce-submit"),c=e.querySelector(".ce-output");i.focus();let b=()=>{_(),t&&(document.addEventListener("mousemove",k,!0),document.addEventListener("click",w,!0),s&&(s.style.display="block"))};e.querySelector(".ce-btn-x").addEventListener("click",b),e.querySelector(".ce-modal-backdrop").addEventListener("click",b),e.querySelectorAll(".ce-target-remove").forEach(o=>{o.addEventListener("click",m=>{m.stopPropagation();let l=Number(o.dataset.idx),h=r[l];h&&(d.get(h.el)?.remove(),d.delete(h.el),r.splice(l,1),M(),B(),r.length===0?b():S())})});let y=()=>A(i.value,a,c);a.addEventListener("click",y),i.addEventListener("keydown",o=>{(o.metaKey||o.ctrlKey)&&o.key==="Enter"&&y(),o.key==="Escape"&&b()})}function B(){r.forEach((t,e)=>{let i=d.get(t.el)?.querySelector(".ce-marker-badge");i&&(i.textContent=String(e+1))})}function _(){document.getElementById("clickedit-modal")?.remove()}async function A(t,e,n){if(!t.trim()||r.length===0)return;e.disabled=!0,e.textContent="Sending\u2026",n.hidden=!1,n.textContent="";let i=[],a=c=>{i.push(c),n.textContent=i.join(`
-`),n.scrollTop=n.scrollHeight};try{let c=await fetch(F,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:t,pageUrl:location.href,elements:r.map(l=>({file:l.file,line:l.line,column:l.column,tag:l.tag,classes:l.classes,text:l.text,outerHtml:l.outerHtml}))})});if(!c.ok||!c.body){a(`\u2717 HTTP ${c.status}`),e.disabled=!1,e.textContent="Retry";return}let b=c.body.getReader(),y=new TextDecoder,o="",m="";for(;;){let{done:l,value:h}=await b.read();if(l)break;o+=y.decode(h,{stream:!0});let v=o.split(`
+    `,document.body.appendChild(e);let i=e.querySelector(".ce-prompt"),a=e.querySelector(".ce-submit"),c=e.querySelector(".ce-output");i.focus();let b=()=>{_(),t&&(document.addEventListener("mousemove",k,!0),document.addEventListener("click",w,!0),s&&(s.style.display="block"))};e.querySelector(".ce-btn-x").addEventListener("click",b),e.querySelector(".ce-modal-backdrop").addEventListener("click",b),e.querySelectorAll(".ce-target-remove").forEach(o=>{o.addEventListener("click",m=>{m.stopPropagation();let l=Number(o.dataset.idx),h=r[l];h&&(d.get(h.el)?.remove(),d.delete(h.el),r.splice(l,1),S(),B(),r.length===0?b():M())})});let y=()=>A(i.value,a,c);a.addEventListener("click",y),i.addEventListener("keydown",o=>{(o.metaKey||o.ctrlKey)&&o.key==="Enter"&&y(),o.key==="Escape"&&b()})}function B(){r.forEach((t,e)=>{let i=d.get(t.el)?.querySelector(".ce-marker-badge");i&&(i.textContent=String(e+1))})}function _(){document.getElementById("clickedit-modal")?.remove()}async function A(t,e,n){if(!t.trim()||r.length===0)return;e.disabled=!0,e.textContent="Sending\u2026",n.hidden=!1,n.textContent="";let i=[],a=c=>{i.push(c),n.textContent=i.join(`
+`),n.scrollTop=n.scrollHeight};try{let c=await fetch(R,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:t,pageUrl:location.href,elements:r.map(l=>({file:l.file,line:l.line,column:l.column,tag:l.tag,classes:l.classes,text:l.text,outerHtml:l.outerHtml}))})});if(!c.ok||!c.body){a(`\u2717 HTTP ${c.status}`),e.disabled=!1,e.textContent="Retry";return}let b=c.body.getReader(),y=new TextDecoder,o="",m="";for(;;){let{done:l,value:h}=await b.read();if(l)break;o+=y.decode(h,{stream:!0});let v=o.split(`
 
 `);o=v.pop()??"";for(let C of v){let f=C.match(/^event: (.+)$/m)?.[1],T=C.match(/^data: (.+)$/m)?.[1];if(!T)continue;let p;try{p=JSON.parse(T)}catch{continue}if(m=f??"",f==="status")a("\u25B6 Claude Code starting\u2026");else if(f==="claude")if(p.type==="assistant"&&p.message?.content)for(let u of p.message.content)u.type==="text"&&u.text&&a(u.text),u.type==="tool_use"&&a(`  \u26A1 ${u.name}${u.input?.file_path?` \u2192 ${u.input.file_path}`:""}`);else p.type==="result"&&a(`
 \u2713 Done`);else f==="stderr"?a(`  ${p.text}`):f==="error"?a(`\u2717 ${p.message}${p.hint?`

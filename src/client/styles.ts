@@ -5,25 +5,42 @@
  */
 
 const CSS = `
-/* Reset the wrapper but NOT children — children get explicit styles below.
-   This avoids "all: initial" cascading weird defaults onto the textarea. */
-#clickedit-toolbar, #clickedit-modal { all: revert; }
-#clickedit-toolbar *, #clickedit-modal * {
+/* No "all: revert" / "all: initial" reset — those use ID-level specificity
+   which overrides our own class rules and breaks the toolbar's positioning.
+   Instead every rule below is element-specific + !important so host CSS
+   can't bleed in. */
+#clickedit-toolbar, #clickedit-toolbar *,
+#clickedit-modal,   #clickedit-modal * {
     box-sizing: border-box !important;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
     line-height: 1.4 !important;
 }
 
-.ce-toolbar {
-    position: fixed; bottom: 16px; right: 16px; z-index: 2147483640;
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 4px;
-    background: rgba(20, 22, 28, 0.92);
+#clickedit-toolbar {
+    position: fixed !important;
+    bottom: 16px !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: 2147483640 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    margin: 0 !important;
+    background: rgba(20, 22, 28, 0.92) !important;
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.45), inset 0 1px 0 0 rgba(255,255,255,0.08);
-    color: #fff; font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.45), inset 0 1px 0 0 rgba(255,255,255,0.08) !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
 }
 
 .ce-btn {
