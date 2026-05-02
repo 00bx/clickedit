@@ -1,18 +1,19 @@
 /**
  * clickedit — browser overlay
- * Click an element, write a prompt, ship it to Claude Code.
+ * Click any number of elements, hit Option+P, type a prompt, Claude Code edits all of them together.
  *
  * Lifecycle:
  *  1. injectStyles + mountToolbar on DOMContentLoaded
- *  2. user hits "🎯" button → enterPickMode
- *  3. user hovers DOM → highlightOverlay tracks the bounding rect
- *  4. user clicks an element → captureElement + openModal
- *  5. modal collects prompt → POST to /__clickedit/edit (SSE)
- *  6. live status panel shows Claude's progress
+ *  2. ⌘⇧E (or 🎯 button) → enterPickMode
+ *  3. Hover → green outline tracks cursor
+ *  4. Click → toggles element in selection set (stays in pick mode for more)
+ *  5. ⌥P (Option+P) → opens prompt modal with ALL selected elements
+ *  6. Submit → POST to /__clickedit/edit (SSE), Claude edits them all
+ *  7. Esc → exits pick mode, clears selection
  */
 
 import { injectStyles } from './styles.js';
-import { getFiberSource, formatComputedStyles } from './fiber.js';
+import { getFiberSource } from './fiber.js';
 
 const ENDPOINT = '/__clickedit/edit';
 const STORAGE_KEY = 'clickedit:enabled';
@@ -32,6 +33,8 @@ interface CapturedElement {
 let pickMode = false;
 let highlight: HTMLDivElement | null = null;
 let lastHovered: HTMLElement | null = null;
+const selection: CapturedElement[] = [];
+const selectionMarkers = new Map<HTMLElement, HTMLDivElement>();
 
 function init() {
     if ((window as any).__CLICKEDIT_LOADED__) return;
@@ -50,30 +53,66 @@ function mountToolbar() {
     bar.id = 'clickedit-toolbar';
     bar.className = 'ce-toolbar';
     bar.innerHTML = `
-        <button class="ce-btn ce-pick" title="Pick element  (⌘⇧E)">
+        <button class="ce-btn ce-pick" title="Pick elements  (⌘⇧E) — click to add/remove, ⌥P to send">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
             <span>Edit</span>
+            <span class="ce-count" data-count="0"></span>
+        </button>
+        <button class="ce-btn ce-prompt-now" title="Open prompt  (⌥P)" style="display:none">
+            <span>Prompt</span>
         </button>
         <button class="ce-btn ce-close" title="Hide toolbar">×</button>
     `;
     document.body.appendChild(bar);
 
-    bar.querySelector('.ce-pick')!.addEventListener('click', enterPickMode);
+    bar.querySelector('.ce-pick')!.addEventListener('click', () => pickMode ? exitPickMode() : enterPickMode());
+    bar.querySelector('.ce-prompt-now')!.addEventListener('click', () => {
+        if (selection.length > 0) openModal();
+    });
     bar.querySelector('.ce-close')!.addEventListener('click', () => {
         bar.remove();
         localStorage.setItem(STORAGE_KEY, '0');
     });
 }
 
+function updateToolbarCount() {
+    const count = selection.length;
+    const badge = document.querySelector<HTMLElement>('.ce-count');
+    const promptBtn = document.querySelector<HTMLElement>('.ce-prompt-now');
+    if (badge) {
+        badge.setAttribute('data-count', String(count));
+        badge.textContent = count > 0 ? String(count) : '';
+    }
+    if (promptBtn) promptBtn.style.display = count > 0 ? '' : 'none';
+}
+
 function mountKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
-        // ⌘⇧E to enter pick mode, Esc to leave
+        // ⌘⇧E toggles pick mode
         if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {
             e.preventDefault();
-            enterPickMode();
+            pickMode ? exitPickMode() : enterPickMode();
+            return;
         }
-        if (e.key === 'Escape' && pickMode) {
-            exitPickMode();
+        // ⌥P (Option+P) opens the prompt with the current selection
+        // e.altKey on macOS = Option key. e.code is reliable since e.key under Option becomes a special char (π)
+        if (e.altKey && (e.code === 'KeyP' || e.key === 'π' || e.key.toLowerCase() === 'p')) {
+            if (selection.length > 0) {
+                e.preventDefault();
+                openModal();
+            }
+            return;
+        }
+        // Esc — leave pick mode and clear selection unless modal is open (modal handles its own Esc)
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('clickedit-modal');
+            if (modal) return; // modal owns Esc
+            if (pickMode) {
+                exitPickMode();
+                clearSelection();
+            } else if (selection.length > 0) {
+                clearSelection();
+            }
         }
     });
 }
@@ -106,7 +145,7 @@ function exitPickMode() {
 function onHover(e: MouseEvent) {
     const target = e.target as HTMLElement;
     if (!target || target === lastHovered) return;
-    if (target.closest('#clickedit-toolbar, #clickedit-modal, .ce-highlight')) return;
+    if (target.closest('#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker')) return;
 
     lastHovered = target;
     const r = target.getBoundingClientRect();
@@ -121,11 +160,40 @@ function onPick(e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     const target = e.target as HTMLElement;
-    if (target.closest('#clickedit-toolbar, #clickedit-modal, .ce-highlight')) return;
+    if (target.closest('#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker')) return;
 
-    const captured = captureElement(target);
-    exitPickMode();
-    openModal(captured);
+    // Toggle: if already selected → remove, else → add
+    const existingIdx = selection.findIndex((s) => s.el === target);
+    if (existingIdx >= 0) {
+        selection.splice(existingIdx, 1);
+        const marker = selectionMarkers.get(target);
+        marker?.remove();
+        selectionMarkers.delete(target);
+    } else {
+        selection.push(captureElement(target));
+        addSelectionMarker(target);
+    }
+    updateToolbarCount();
+}
+
+function addSelectionMarker(el: HTMLElement) {
+    const r = el.getBoundingClientRect();
+    const marker = document.createElement('div');
+    marker.className = 'ce-marker';
+    marker.dataset.index = String(selection.length);
+    marker.style.transform = `translate(${r.left + window.scrollX}px, ${r.top + window.scrollY}px)`;
+    marker.style.width = `${r.width}px`;
+    marker.style.height = `${r.height}px`;
+    marker.innerHTML = `<span class="ce-marker-badge">${selection.length}</span>`;
+    document.body.appendChild(marker);
+    selectionMarkers.set(el, marker);
+}
+
+function clearSelection() {
+    selection.length = 0;
+    selectionMarkers.forEach((m) => m.remove());
+    selectionMarkers.clear();
+    updateToolbarCount();
 }
 
 function captureElement(el: HTMLElement): CapturedElement {
@@ -143,15 +211,41 @@ function captureElement(el: HTMLElement): CapturedElement {
     };
 }
 
-function openModal(c: CapturedElement) {
+function openModal() {
+    if (selection.length === 0) return;
     closeModal();
+
+    // Pause pick mode while modal is open so clicks in the modal don't toggle selection
+    const wasPickMode = pickMode;
+    if (wasPickMode) {
+        document.removeEventListener('mousemove', onHover, true);
+        document.removeEventListener('click', onPick, true);
+        if (highlight) highlight.style.display = 'none';
+    }
 
     const modal = document.createElement('div');
     modal.id = 'clickedit-modal';
     modal.className = 'ce-modal';
-    const fileLabel = c.file
-        ? escapeHtml(stripCwd(c.file)) + (c.line ? `:${c.line}` : '')
-        : '<span class="ce-muted">(file unknown — Claude will locate by classes/text)</span>';
+
+    const targetsHtml = selection.map((c, i) => {
+        const fileLabel = c.file
+            ? escapeHtml(stripCwd(c.file)) + (c.line ? `:${c.line}` : '')
+            : '<span class="ce-muted">(file unknown — Claude will locate by classes/text)</span>';
+        return `
+            <div class="ce-target-block">
+                <div class="ce-target-head">
+                    <span class="ce-target-num">${i + 1}</span>
+                    <code class="ce-mono">${fileLabel}</code>
+                    <button class="ce-target-remove" data-idx="${i}" title="Remove from selection">×</button>
+                </div>
+                <div class="ce-target-meta">
+                    <span class="ce-pill"><span class="ce-pill-label">tag</span>&lt;${escapeHtml(c.tag)}&gt;</span>
+                    ${c.classes ? `<span class="ce-pill ce-pill-class" title="${escapeHtml(c.classes)}"><span class="ce-pill-label">class</span>${escapeHtml(truncate(c.classes, 60))}</span>` : ''}
+                    ${c.text ? `<span class="ce-pill" title="${escapeHtml(c.text)}"><span class="ce-pill-label">text</span>${escapeHtml(truncate(c.text, 40))}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 
     modal.innerHTML = `
         <div class="ce-modal-backdrop"></div>
@@ -160,18 +254,16 @@ function openModal(c: CapturedElement) {
                 <div class="ce-modal-title">
                     <span class="ce-dot"></span>
                     <span>clickedit</span>
+                    <span class="ce-modal-sub">${selection.length} ${selection.length === 1 ? 'element' : 'elements'} selected</span>
                 </div>
                 <button class="ce-btn-x" title="Close (Esc)">×</button>
             </div>
 
-            <div class="ce-target">
-                <div class="ce-target-row"><span class="ce-label">FILE</span><code class="ce-mono">${fileLabel}</code></div>
-                <div class="ce-target-row"><span class="ce-label">TAG</span><code class="ce-mono">&lt;${escapeHtml(c.tag)}&gt;</code></div>
-                ${c.classes ? `<div class="ce-target-row"><span class="ce-label">CLASS</span><code class="ce-mono ce-truncate">${escapeHtml(c.classes)}</code></div>` : ''}
-                ${c.text ? `<div class="ce-target-row"><span class="ce-label">TEXT</span><span class="ce-text-preview">${escapeHtml(c.text)}</span></div>` : ''}
-            </div>
+            <div class="ce-targets">${targetsHtml}</div>
 
-            <textarea class="ce-prompt" placeholder="What should change?  e.g. make this 12px wider, add a soft amber glow, switch to bento double-shell" rows="3" autofocus></textarea>
+            <div class="ce-prompt-wrap">
+                <textarea class="ce-prompt" placeholder="What should change across ${selection.length === 1 ? 'this element' : 'these elements'}?  e.g. align them in a row, add 12px gap, swap to bento style" rows="3" autofocus spellcheck="false"></textarea>
+            </div>
 
             <div class="ce-actions">
                 <span class="ce-hint">⌘↵ to submit · Esc to close</span>
@@ -189,11 +281,39 @@ function openModal(c: CapturedElement) {
 
     textarea.focus();
 
-    const close = () => closeModal();
+    const close = () => {
+        closeModal();
+        // Resume pick mode if we paused it
+        if (wasPickMode) {
+            document.addEventListener('mousemove', onHover, true);
+            document.addEventListener('click', onPick, true);
+            if (highlight) highlight.style.display = 'block';
+        }
+    };
     modal.querySelector('.ce-btn-x')!.addEventListener('click', close);
     modal.querySelector('.ce-modal-backdrop')!.addEventListener('click', close);
 
-    const fire = () => sendEdit(c, textarea.value, submit, output);
+    // Remove a target from the selection while modal is open
+    modal.querySelectorAll<HTMLButtonElement>('.ce-target-remove').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = Number(btn.dataset.idx);
+            const item = selection[idx];
+            if (item) {
+                const marker = selectionMarkers.get(item.el);
+                marker?.remove();
+                selectionMarkers.delete(item.el);
+                selection.splice(idx, 1);
+                updateToolbarCount();
+                // Rebuild selection markers' numbering
+                rebuildMarkerNumbers();
+                if (selection.length === 0) close();
+                else openModal(); // re-render
+            }
+        });
+    });
+
+    const fire = () => sendEdit(textarea.value, submit, output);
     submit.addEventListener('click', fire);
     textarea.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') fire();
@@ -201,12 +321,21 @@ function openModal(c: CapturedElement) {
     });
 }
 
+function rebuildMarkerNumbers() {
+    selection.forEach((c, i) => {
+        const marker = selectionMarkers.get(c.el);
+        const badge = marker?.querySelector('.ce-marker-badge');
+        if (badge) badge.textContent = String(i + 1);
+    });
+}
+
 function closeModal() {
     document.getElementById('clickedit-modal')?.remove();
 }
 
-async function sendEdit(c: CapturedElement, prompt: string, submitBtn: HTMLButtonElement, output: HTMLDivElement) {
+async function sendEdit(prompt: string, submitBtn: HTMLButtonElement, output: HTMLDivElement) {
     if (!prompt.trim()) return;
+    if (selection.length === 0) return;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
@@ -226,14 +355,16 @@ async function sendEdit(c: CapturedElement, prompt: string, submitBtn: HTMLButto
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 prompt,
-                file: c.file,
-                line: c.line,
-                column: c.column,
-                tag: c.tag,
-                classes: c.classes,
-                text: c.text,
-                outerHtml: c.outerHtml,
                 pageUrl: location.href,
+                elements: selection.map((c) => ({
+                    file: c.file,
+                    line: c.line,
+                    column: c.column,
+                    tag: c.tag,
+                    classes: c.classes,
+                    text: c.text,
+                    outerHtml: c.outerHtml,
+                })),
             }),
         });
 

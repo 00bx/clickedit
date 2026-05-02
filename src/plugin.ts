@@ -16,8 +16,7 @@ export interface ClickEditOptions {
     logFile?: string;
 }
 
-interface EditRequest {
-    prompt: string;
+interface CapturedElementPayload {
     file?: string | null;
     line?: number | null;
     column?: number | null;
@@ -25,7 +24,19 @@ interface EditRequest {
     classes?: string;
     text?: string;
     outerHtml?: string;
+}
+interface EditRequest {
+    prompt: string;
     pageUrl?: string;
+    elements?: CapturedElementPayload[];
+    // legacy single-element fields (kept for compatibility)
+    file?: string | null;
+    line?: number | null;
+    column?: number | null;
+    tag?: string;
+    classes?: string;
+    text?: string;
+    outerHtml?: string;
 }
 
 const ENDPOINT = '/__clickedit/edit';
@@ -185,30 +196,48 @@ export function clickedit(options: ClickEditOptions = {}): Plugin {
 }
 
 function buildPrompt(p: EditRequest): string {
-    const fileLine = p.file ? `${p.file}${p.line ? `:${p.line}` : ''}${p.column ? `:${p.column}` : ''}` : '(file unknown — search by classes/text)';
+    // Normalize: prefer the new `elements` array, fall back to legacy single-element fields
+    const elements: CapturedElementPayload[] = p.elements?.length
+        ? p.elements
+        : [{
+            file: p.file, line: p.line, column: p.column,
+            tag: p.tag, classes: p.classes, text: p.text, outerHtml: p.outerHtml,
+        }];
 
-    return `[clickedit] The user clicked an element in their dev browser and wants you to edit it.
-
-ELEMENT
+    const elementBlocks = elements.map((e, i) => {
+        const fileLine = e.file
+            ? `${e.file}${e.line ? `:${e.line}` : ''}${e.column ? `:${e.column}` : ''}`
+            : '(file unknown — search by classes/text)';
+        return `ELEMENT ${i + 1} of ${elements.length}
 - Source: ${fileLine}
-- Tag: <${p.tag ?? 'unknown'}>
-- Classes: ${p.classes || '(none)'}
-- Text: ${truncate(p.text ?? '', 200)}
-- Page: ${p.pageUrl ?? '(unknown)'}
+- Tag: <${e.tag ?? 'unknown'}>
+- Classes: ${e.classes || '(none)'}
+- Text: ${truncate(e.text ?? '', 200)}
 - Outer HTML (truncated):
 \`\`\`html
-${truncate(p.outerHtml ?? '', 800)}
-\`\`\`
+${truncate(e.outerHtml ?? '', 600)}
+\`\`\``;
+    }).join('\n\n');
+
+    const elementCount = elements.length;
+    const noun = elementCount === 1 ? 'an element' : `${elementCount} elements`;
+    const them = elementCount === 1 ? 'it' : 'them';
+
+    return `[clickedit] The user selected ${noun} in their dev browser and wants you to edit ${them}.
+
+PAGE: ${p.pageUrl ?? '(unknown)'}
+
+${elementBlocks}
 
 USER REQUEST
 ${p.prompt}
 
 INSTRUCTIONS
-1. Open the source file (read it first if you don't have it in context).
-2. Locate the exact element using the classes / text / outerHtml above.
-3. Apply the requested change.
+1. Open every source file referenced above (read each before editing if not in context).
+2. Locate each exact element using the classes / text / outerHtml.
+3. Apply the requested change to ${elementCount === 1 ? 'it' : 'all of them, in a coordinated way if the request implies it (e.g. "align them in a row")'}.
 4. Follow the project's CLAUDE.md, MEMORY.md, and skills — bento style, liquid motion, never raw strings for enums, RTL-aware, no drop-shadows, etc.
-5. Make the smallest precise edit. Do not refactor unrelated code.
+5. Make the smallest precise edits. Do not refactor unrelated code.
 6. When done, briefly say what you changed.`;
 }
 
