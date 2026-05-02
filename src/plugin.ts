@@ -139,17 +139,47 @@ export function clickedit(options: ClickEditOptions = {}): Plugin {
             });
         },
 
+        // For Vite-served HTML (pure SPA): inject directly via transformIndexHtml.
         transformIndexHtml: {
             order: 'post',
             handler(html) {
                 if (!enabled) return html;
                 if (process.env.NODE_ENV === 'production') return html;
-                // Inject the overlay just before </body> so it loads after the app renders.
                 const tag = `<script type="module">${CLIENT_BUNDLE}</script>`;
                 return html.includes('</body>')
                     ? html.replace('</body>', `${tag}\n</body>`)
                     : html + tag;
             },
+        },
+
+        // For Laravel-served HTML (Inertia, Blade, etc.) Vite never sees the page,
+        // but the Laravel @vite directive still loads the JS entry from Vite. We
+        // inject our overlay bootstrap into the entry module so it boots no matter
+        // who served the HTML.
+        resolveId(id) {
+            if (id === 'virtual:clickedit/client') return '\0virtual:clickedit/client';
+            return null;
+        },
+        load(id) {
+            if (id === '\0virtual:clickedit/client') {
+                // Wrap the IIFE bundle as a side-effect-only module
+                return `;(function(){${CLIENT_BUNDLE}})();`;
+            }
+            return null;
+        },
+        transform(code, id) {
+            if (!enabled) return null;
+            if (id.includes('node_modules')) return null;
+            // Match common entry filenames so the overlay auto-injects without user
+            // having to import anything. Covers Inertia (app.tsx), Vite SPA (main.tsx),
+            // and arbitrary entries declared in laravel-vite-plugin.
+            if (!/\/(app|main|index)\.(tsx|ts|jsx|js)$/.test(id)) return null;
+            // Skip if already includes our marker (HMR re-runs)
+            if (code.includes('virtual:clickedit/client')) return null;
+            return {
+                code: `import 'virtual:clickedit/client';\n${code}`,
+                map: null,
+            };
         },
     };
 }

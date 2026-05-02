@@ -125,6 +125,7 @@ data: ${JSON.stringify(data)}
         });
       });
     },
+    // For Vite-served HTML (pure SPA): inject directly via transformIndexHtml.
     transformIndexHtml: {
       order: "post",
       handler(html) {
@@ -134,6 +135,31 @@ data: ${JSON.stringify(data)}
         return html.includes("</body>") ? html.replace("</body>", `${tag}
 </body>`) : html + tag;
       }
+    },
+    // For Laravel-served HTML (Inertia, Blade, etc.) Vite never sees the page,
+    // but the Laravel @vite directive still loads the JS entry from Vite. We
+    // inject our overlay bootstrap into the entry module so it boots no matter
+    // who served the HTML.
+    resolveId(id) {
+      if (id === "virtual:clickedit/client") return "\0virtual:clickedit/client";
+      return null;
+    },
+    load(id) {
+      if (id === "\0virtual:clickedit/client") {
+        return `;(function(){${CLIENT_BUNDLE}})();`;
+      }
+      return null;
+    },
+    transform(code, id) {
+      if (!enabled) return null;
+      if (id.includes("node_modules")) return null;
+      if (!/\/(app|main|index)\.(tsx|ts|jsx|js)$/.test(id)) return null;
+      if (code.includes("virtual:clickedit/client")) return null;
+      return {
+        code: `import 'virtual:clickedit/client';
+${code}`,
+        map: null
+      };
     }
   };
 }
