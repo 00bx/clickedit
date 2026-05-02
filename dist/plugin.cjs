@@ -49,6 +49,13 @@ function clickedit(options = {}) {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ ok: true, provider: options.provider ?? "claude-code" }));
       });
+      server.middlewares.use("/__clickedit/reload", (_req, res) => {
+        const mod = server.moduleGraph.getModuleById("\0virtual:clickedit/client");
+        if (mod) server.moduleGraph.invalidateModule(mod);
+        server.ws.send({ type: "full-reload", path: "*" });
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: true }));
+      });
       server.middlewares.use(ENDPOINT, async (req, res) => {
         if (req.method !== "POST") {
           res.statusCode = 405;

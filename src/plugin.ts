@@ -62,6 +62,18 @@ export function clickedit(options: ClickEditOptions = {}): Plugin {
                 res.end(JSON.stringify({ ok: true, provider: options.provider ?? 'claude-code' }));
             });
 
+            // Force-reload endpoint — POST hits this and we invalidate the
+            // virtual module + the entry, then trigger a full client reload.
+            // Useful after rebuilding clickedit so the host doesn't need a
+            // dev-server restart.
+            server.middlewares.use('/__clickedit/reload', (_req, res) => {
+                const mod = server.moduleGraph.getModuleById('\0virtual:clickedit/client');
+                if (mod) server.moduleGraph.invalidateModule(mod);
+                server.ws.send({ type: 'full-reload', path: '*' });
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ ok: true }));
+            });
+
             // Main bridge endpoint — accepts element + prompt, streams back Claude Code output
             server.middlewares.use(ENDPOINT, async (req, res) => {
                 if (req.method !== 'POST') {
