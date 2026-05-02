@@ -111,6 +111,28 @@ html.ce-picking, html.ce-picking * { cursor: crosshair !important; }
 .ce-prompt-now { background: linear-gradient(180deg, rgba(251,191,36,0.18), rgba(251,191,36,0.06)) !important; border-color: rgba(251,191,36,0.4) !important; color: #fbbf24 !important; }
 .ce-prompt-now:hover { background: linear-gradient(180deg, rgba(251,191,36,0.28), rgba(251,191,36,0.12)) !important; }
 
+/* Keyboard-shortcut chip inside toolbar buttons */
+kbd.ce-kbd {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 1px 5px !important;
+    margin-left: 4px !important;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    color: rgba(255,255,255,0.55) !important;
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 4px !important;
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.05) !important;
+    line-height: 1.4 !important;
+}
+.ce-prompt-now kbd.ce-kbd {
+    color: rgba(251,191,36,0.85) !important;
+    background: rgba(251,191,36,0.08) !important;
+    border-color: rgba(251,191,36,0.25) !important;
+}
+
 /* Modal */
 #clickedit-modal {
     position: fixed !important;

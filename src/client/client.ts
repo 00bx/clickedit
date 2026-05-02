@@ -53,15 +53,17 @@ function mountToolbar() {
     bar.id = 'clickedit-toolbar';
     bar.className = 'ce-toolbar';
     bar.innerHTML = `
-        <button class="ce-btn ce-pick" title="Pick elements  (⌘⇧E) — click to add/remove, ⌥P to send">
+        <button class="ce-btn ce-pick" title="Pick elements (⌘⇧E) — click to add/remove">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
             <span>Edit</span>
+            <kbd class="ce-kbd">⌘⇧E</kbd>
             <span class="ce-count" data-count="0"></span>
         </button>
-        <button class="ce-btn ce-prompt-now" title="Open prompt  (⌥P)" style="display:none">
+        <button class="ce-btn ce-prompt-now" title="Open prompt with selected elements" style="display:none">
             <span>Prompt</span>
+            <kbd class="ce-kbd">⌥P</kbd>
         </button>
-        <button class="ce-btn ce-close" title="Hide toolbar">×</button>
+        <button class="ce-btn ce-close" title="Hide toolbar (refresh restores)">×</button>
     `;
     document.body.appendChild(bar);
 
@@ -163,10 +165,12 @@ function onHover(e: MouseEvent) {
 }
 
 function onPick(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    // Let clicks on our own UI flow through (toolbar buttons, modal, markers).
+    // Important: this check MUST run before preventDefault/stopPropagation.
+    if (target.closest('#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker')) return;
     e.preventDefault();
     e.stopPropagation();
-    const target = e.target as HTMLElement;
-    if (target.closest('#clickedit-toolbar, #clickedit-modal, .ce-highlight, .ce-marker')) return;
 
     // Toggle: if already selected → remove, else → add
     const existingIdx = selection.findIndex((s) => s.el === target);
