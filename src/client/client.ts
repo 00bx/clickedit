@@ -42,6 +42,19 @@ function init() {
     injectStyles();
     mountToolbar();
     mountKeyboardShortcuts();
+
+    // Expose tiny debug helpers on window so users (and we) can poke at
+    // state from devtools when something seems off.
+    (window as any).clickedit = {
+        version: '0.1.0',
+        get selection() { return selection.map((s) => ({ tag: s.tag, file: s.file, line: s.line })); },
+        get pickMode() { return pickMode; },
+        openModal: () => openModal(),
+        enterPickMode,
+        exitPickMode,
+        clearSelection,
+    };
+    console.log('[clickedit] ready — try `clickedit` in the console');
 }
 
 function mountToolbar() {
@@ -67,9 +80,15 @@ function mountToolbar() {
     `;
     document.body.appendChild(bar);
 
-    bar.querySelector('.ce-pick')!.addEventListener('click', () => pickMode ? exitPickMode() : enterPickMode());
-    bar.querySelector('.ce-prompt-now')!.addEventListener('click', () => {
+    bar.querySelector('.ce-pick')!.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pickMode ? exitPickMode() : enterPickMode();
+    });
+    bar.querySelector('.ce-prompt-now')!.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('[clickedit] Prompt clicked, selection:', selection.length);
         if (selection.length > 0) openModal();
+        else console.warn('[clickedit] no elements selected — pick first then press ⌥P');
     });
     // Hide for this view only (in-memory). Refresh always brings it back.
     bar.querySelector('.ce-close')!.addEventListener('click', () => bar.remove());
@@ -222,7 +241,11 @@ function captureElement(el: HTMLElement): CapturedElement {
 }
 
 function openModal() {
-    if (selection.length === 0) return;
+    console.log('[clickedit] openModal called, selection:', selection.length);
+    if (selection.length === 0) {
+        console.warn('[clickedit] openModal aborted — no elements in selection');
+        return;
+    }
     closeModal();
 
     // Pause pick mode while modal is open so clicks in the modal don't toggle selection
@@ -284,6 +307,7 @@ function openModal() {
         </div>
     `;
     document.body.appendChild(modal);
+    console.log('[clickedit] modal appended to body, id:', modal.id);
 
     const textarea = modal.querySelector<HTMLTextAreaElement>('.ce-prompt')!;
     const submit = modal.querySelector<HTMLButtonElement>('.ce-submit')!;
