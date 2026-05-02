@@ -1,0 +1,174 @@
+"use strict";
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/plugin.ts
+var plugin_exports = {};
+__export(plugin_exports, {
+  clickedit: () => clickedit,
+  default: () => plugin_default
+});
+module.exports = __toCommonJS(plugin_exports);
+var import_node_child_process = require("node:child_process");
+var import_promises = require("node:fs/promises");
+
+// src/client.embedded.ts
+var CLIENT_BUNDLE = '"use strict";(()=>{var _=`\n.ce-toolbar, #clickedit-modal { all: initial; }\n.ce-toolbar *, #clickedit-modal * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }\n\n.ce-toolbar {\n    position: fixed; bottom: 16px; right: 16px; z-index: 2147483640;\n    display: inline-flex; align-items: center; gap: 4px;\n    padding: 4px;\n    background: rgba(20, 22, 28, 0.92);\n    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);\n    border: 1px solid rgba(255,255,255,0.08);\n    border-radius: 12px;\n    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.45), inset 0 1px 0 0 rgba(255,255,255,0.08);\n    color: #fff; font-size: 12px;\n}\n\n.ce-btn {\n    display: inline-flex; align-items: center; gap: 6px;\n    padding: 6px 10px;\n    background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));\n    border: 1px solid rgba(255,255,255,0.08);\n    border-radius: 8px;\n    color: #fff; font-weight: 500; cursor: pointer;\n    transition: background 120ms ease, transform 120ms ease;\n    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06);\n}\n.ce-btn:hover { background: linear-gradient(180deg, rgba(163,230,53,0.18), rgba(163,230,53,0.06)); border-color: rgba(163,230,53,0.35); }\n.ce-btn:active { transform: scale(0.97); }\n.ce-pick svg { color: #a3e635; }\n\n.ce-close {\n    width: 24px; height: 24px; padding: 0; justify-content: center;\n    background: transparent; border: none; color: rgba(255,255,255,0.5); font-size: 16px;\n}\n.ce-close:hover { background: rgba(255,255,255,0.08); color: #fff; border: none; }\n\n/* Pick mode cursor + element highlight */\nhtml.ce-picking, html.ce-picking * { cursor: crosshair !important; }\n.ce-highlight {\n    position: absolute; top: 0; left: 0;\n    pointer-events: none; z-index: 2147483641;\n    background: rgba(163,230,53,0.16);\n    border: 2px solid rgba(132,204,22,0.85);\n    border-radius: 6px;\n    transition: transform 90ms cubic-bezier(0.4, 0, 0.2, 1), width 90ms, height 90ms;\n    box-shadow: 0 0 0 1px rgba(132,204,22,0.3), 0 0 16px 0 rgba(163,230,53,0.25);\n    display: none;\n}\n\n/* Modal */\n.ce-modal {\n    position: fixed; inset: 0; z-index: 2147483645;\n    display: flex; align-items: flex-end; justify-content: center;\n    padding: 24px;\n}\n.ce-modal-backdrop {\n    position: absolute; inset: 0;\n    background: rgba(0,0,0,0.35);\n    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);\n    animation: ce-fade 140ms ease-out;\n}\n.ce-modal-card {\n    position: relative;\n    width: 560px; max-width: 100%;\n    background: rgba(22, 24, 30, 0.96);\n    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);\n    border: 1px solid rgba(255,255,255,0.10);\n    border-radius: 16px;\n    box-shadow: 0 24px 64px -16px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.07);\n    color: #fff;\n    animation: ce-rise 220ms cubic-bezier(0.34, 1.56, 0.64, 1);\n}\n\n@keyframes ce-fade { from { opacity: 0; } to { opacity: 1; } }\n@keyframes ce-rise { from { transform: translateY(24px) scale(0.96); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }\n\n.ce-modal-head {\n    display: flex; align-items: center; justify-content: space-between;\n    padding: 14px 18px;\n    border-bottom: 1px solid rgba(255,255,255,0.06);\n}\n.ce-modal-title { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; letter-spacing: 0.02em; }\n.ce-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(180deg, #a3e635, #65a30d); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3); }\n.ce-btn-x { background: transparent; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }\n.ce-btn-x:hover { background: rgba(255,255,255,0.06); color: #fff; }\n\n.ce-target {\n    padding: 12px 18px;\n    display: flex; flex-direction: column; gap: 4px;\n    border-bottom: 1px solid rgba(255,255,255,0.06);\n    background: rgba(255,255,255,0.02);\n}\n.ce-target-row { display: flex; align-items: center; gap: 12px; font-size: 11px; line-height: 1.5; }\n.ce-label { display: inline-block; min-width: 44px; color: rgba(255,255,255,0.4); font-weight: 600; letter-spacing: 0.08em; font-size: 9px; }\n.ce-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; color: rgba(255,255,255,0.85); font-size: 11px; }\n.ce-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 360px; display: inline-block; }\n.ce-text-preview { color: rgba(255,255,255,0.7); font-size: 11px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }\n.ce-muted { color: rgba(255,255,255,0.4); }\n\n.ce-prompt {\n    width: calc(100% - 36px);\n    margin: 14px 18px 8px;\n    padding: 10px 12px;\n    background: rgba(0,0,0,0.3);\n    border: 1px solid rgba(255,255,255,0.10);\n    border-radius: 10px;\n    color: #fff; font-size: 13px; font-family: inherit;\n    resize: vertical; min-height: 64px;\n    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.04);\n}\n.ce-prompt:focus { outline: none; border-color: rgba(163,230,53,0.55); box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.04), 0 0 0 3px rgba(163,230,53,0.15); }\n.ce-prompt::placeholder { color: rgba(255,255,255,0.35); }\n\n.ce-actions {\n    display: flex; align-items: center; justify-content: space-between;\n    padding: 0 18px 14px;\n}\n.ce-hint { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.02em; }\n.ce-submit {\n    padding: 8px 14px;\n    background: linear-gradient(180deg, #a3e635, #65a30d);\n    border: 1px solid rgba(101,163,13,0.6);\n    border-radius: 8px;\n    color: #1a2e05; font-weight: 600; font-size: 12px; cursor: pointer;\n    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.4);\n    transition: transform 120ms ease, opacity 120ms ease;\n}\n.ce-submit:hover { filter: brightness(1.05); }\n.ce-submit:active { transform: scale(0.97); }\n.ce-submit:disabled { opacity: 0.5; cursor: progress; }\n\n.ce-output {\n    margin: 0 18px 18px;\n    max-height: 240px; overflow-y: auto;\n    padding: 10px 12px;\n    background: rgba(0,0,0,0.35);\n    border: 1px solid rgba(255,255,255,0.06);\n    border-radius: 10px;\n    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;\n    font-size: 11px; line-height: 1.55; color: rgba(255,255,255,0.8);\n    white-space: pre-wrap; word-break: break-word;\n}\n.ce-output:empty { display: none; }\n`;function w(){if(document.getElementById("clickedit-styles"))return;let e=document.createElement("style");e.id="clickedit-styles",e.textContent=_,document.head.appendChild(e)}function v(e){let t=e;for(;t;){let n=z(t);for(;n;){let a=n._debugSource;if(a&&a.fileName)return{fileName:a.fileName,lineNumber:a.lineNumber,columnNumber:a.columnNumber};n=n._debugOwner??n.return??null}t=t.parentElement}return null}function z(e){let t=Object.keys(e).find(o=>o.startsWith("__reactFiber$")||o.startsWith("__reactInternalInstance$"));return t?e[t]:null}var D="/__clickedit/edit",E="clickedit:enabled",b=!1,c=null,f=null;function L(){window.__CLICKEDIT_LOADED__||(window.__CLICKEDIT_LOADED__=!0,w(),I(),F())}function I(){if(!(localStorage.getItem(E)!=="0"))return;let t=document.createElement("div");t.id="clickedit-toolbar",t.className="ce-toolbar",t.innerHTML=`\n        <button class="ce-btn ce-pick" title="Pick element  (\\u2318\\u21E7E)">\n            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>\n            <span>Edit</span>\n        </button>\n        <button class="ce-btn ce-close" title="Hide toolbar">\\xD7</button>\n    `,document.body.appendChild(t),t.querySelector(".ce-pick").addEventListener("click",S),t.querySelector(".ce-close").addEventListener("click",()=>{t.remove(),localStorage.setItem(E,"0")})}function F(){window.addEventListener("keydown",e=>{(e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==="e"&&(e.preventDefault(),S()),e.key==="Escape"&&b&&M()})}function S(){b||(b=!0,document.documentElement.classList.add("ce-picking"),c||(c=document.createElement("div"),c.className="ce-highlight",document.body.appendChild(c)),c.style.display="block",document.addEventListener("mousemove",T,!0),document.addEventListener("click",H,!0))}function M(){b=!1,document.documentElement.classList.remove("ce-picking"),c&&(c.style.display="none"),f=null,document.removeEventListener("mousemove",T,!0),document.removeEventListener("click",H,!0)}function T(e){let t=e.target;if(!t||t===f||t.closest("#clickedit-toolbar, #clickedit-modal, .ce-highlight"))return;f=t;let o=t.getBoundingClientRect();c&&(c.style.transform=`translate(${o.left+window.scrollX}px, ${o.top+window.scrollY}px)`,c.style.width=`${o.width}px`,c.style.height=`${o.height}px`)}function H(e){e.preventDefault(),e.stopPropagation();let t=e.target;if(t.closest("#clickedit-toolbar, #clickedit-modal, .ce-highlight"))return;let o=O(t);M(),R(o)}function O(e){let t=v(e);return{el:e,file:t?.fileName,line:t?.lineNumber,column:t?.columnNumber,tag:e.tagName.toLowerCase(),classes:e.className?.toString()??"",text:(e.textContent??"").trim().slice(0,200),outerHtml:e.outerHTML.slice(0,1500),rect:e.getBoundingClientRect()}}function R(e){C();let t=document.createElement("div");t.id="clickedit-modal",t.className="ce-modal";let o=e.file?m(j(e.file))+(e.line?`:${e.line}`:""):\'<span class="ce-muted">(file unknown \\u2014 Claude will locate by classes/text)</span>\';t.innerHTML=`\n        <div class="ce-modal-backdrop"></div>\n        <div class="ce-modal-card">\n            <div class="ce-modal-head">\n                <div class="ce-modal-title">\n                    <span class="ce-dot"></span>\n                    <span>clickedit</span>\n                </div>\n                <button class="ce-btn-x" title="Close (Esc)">\\xD7</button>\n            </div>\n\n            <div class="ce-target">\n                <div class="ce-target-row"><span class="ce-label">FILE</span><code class="ce-mono">${o}</code></div>\n                <div class="ce-target-row"><span class="ce-label">TAG</span><code class="ce-mono">&lt;${m(e.tag)}&gt;</code></div>\n                ${e.classes?`<div class="ce-target-row"><span class="ce-label">CLASS</span><code class="ce-mono ce-truncate">${m(e.classes)}</code></div>`:""}\n                ${e.text?`<div class="ce-target-row"><span class="ce-label">TEXT</span><span class="ce-text-preview">${m(e.text)}</span></div>`:""}\n            </div>\n\n            <textarea class="ce-prompt" placeholder="What should change?  e.g. make this 12px wider, add a soft amber glow, switch to bento double-shell" rows="3" autofocus></textarea>\n\n            <div class="ce-actions">\n                <span class="ce-hint">\\u2318\\u21B5 to submit \\xB7 Esc to close</span>\n                <button class="ce-submit">Send to Claude Code</button>\n            </div>\n\n            <div class="ce-output" hidden></div>\n        </div>\n    `,document.body.appendChild(t);let n=t.querySelector(".ce-prompt"),a=t.querySelector(".ce-submit"),i=t.querySelector(".ce-output");n.focus();let r=()=>C();t.querySelector(".ce-btn-x").addEventListener("click",r),t.querySelector(".ce-modal-backdrop").addEventListener("click",r);let u=()=>P(e,n.value,a,i);a.addEventListener("click",u),n.addEventListener("keydown",d=>{(d.metaKey||d.ctrlKey)&&d.key==="Enter"&&u(),d.key==="Escape"&&r()})}function C(){document.getElementById("clickedit-modal")?.remove()}async function P(e,t,o,n){if(!t.trim())return;o.disabled=!0,o.textContent="Sending\\u2026",n.hidden=!1,n.textContent="";let a=[],i=r=>{a.push(r),n.textContent=a.join(`\n`),n.scrollTop=n.scrollHeight};try{let r=await fetch(D,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:t,file:e.file,line:e.line,column:e.column,tag:e.tag,classes:e.classes,text:e.text,outerHtml:e.outerHtml,pageUrl:location.href})});if(!r.ok||!r.body){i(`\\u2717 HTTP ${r.status}`),o.disabled=!1,o.textContent="Retry";return}let u=r.body.getReader(),d=new TextDecoder,g="",x="";for(;;){let{done:$,value:N}=await u.read();if($)break;g+=d.decode(N,{stream:!0});let h=g.split(`\n\n`);g=h.pop()??"";for(let y of h){let p=y.match(/^event: (.+)$/m)?.[1],k=y.match(/^data: (.+)$/m)?.[1];if(!k)continue;let s;try{s=JSON.parse(k)}catch{continue}if(x=p??"",p==="status")i("\\u25B6 Claude Code starting\\u2026");else if(p==="claude")if(s.type==="assistant"&&s.message?.content)for(let l of s.message.content)l.type==="text"&&l.text&&i(l.text),l.type==="tool_use"&&i(`  \\u26A1 ${l.name}${l.input?.file_path?` \\u2192 ${l.input.file_path}`:""}`);else s.type==="result"&&i(`\n\\u2713 Done`);else p==="stderr"?i(`  ${s.text}`):p==="error"?i(`\\u2717 ${s.message}${s.hint?`\n  ${s.hint}`:""}`):p==="done"&&(s.exitCode===0?i(`\n\\u2713 Complete`):i(`\n\\u2717 Exit ${s.exitCode}`))}}o.disabled=!1,o.textContent=x==="error"?"Retry":"Send another"}catch(r){i(`\\u2717 ${r?.message??r}`),o.disabled=!1,o.textContent="Retry"}}function m(e){return e.replace(/[&<>"\']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",\'"\':"&quot;","\'":"&#39;"})[t])}function j(e){let t=e.indexOf("/resources/");if(t>=0)return e.slice(t+1);let o=e.indexOf("/src/");return o>=0?e.slice(o+1):e}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",L):L();})();\n';
+
+// src/plugin.ts
+var ENDPOINT = "/__clickedit/edit";
+var PING_ENDPOINT = "/__clickedit/ping";
+function clickedit(options = {}) {
+  const claudeBin = options.claudeBin ?? "claude";
+  const enabled = options.enabled !== false;
+  let projectRoot = options.projectRoot ?? process.cwd();
+  return {
+    name: "clickedit",
+    apply: "serve",
+    // dev only — never injected into prod builds
+    configResolved(config) {
+      projectRoot = options.projectRoot ?? config.root;
+    },
+    configureServer(server) {
+      server.middlewares.use(PING_ENDPOINT, (_req, res) => {
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: true, provider: options.provider ?? "claude-code" }));
+      });
+      server.middlewares.use(ENDPOINT, async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          return res.end("POST only");
+        }
+        let body = "";
+        req.on("data", (chunk) => body += chunk);
+        req.on("end", async () => {
+          let payload;
+          try {
+            payload = JSON.parse(body);
+          } catch {
+            res.statusCode = 400;
+            return res.end("Invalid JSON");
+          }
+          if (!payload.prompt || typeof payload.prompt !== "string") {
+            res.statusCode = 400;
+            return res.end("Missing prompt");
+          }
+          const finalPrompt = buildPrompt(payload);
+          if (options.logFile) {
+            await (0, import_promises.appendFile)(
+              options.logFile,
+              `
+=== ${(/* @__PURE__ */ new Date()).toISOString()} ===
+${finalPrompt}
+`
+            ).catch(() => void 0);
+          }
+          res.setHeader("Content-Type", "text/event-stream");
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Connection", "keep-alive");
+          res.flushHeaders?.();
+          const send = (event, data) => {
+            res.write(`event: ${event}
+data: ${JSON.stringify(data)}
+
+`);
+          };
+          send("status", { state: "starting", file: payload.file ?? null });
+          try {
+            const child = (0, import_node_child_process.spawn)(
+              claudeBin,
+              ["-p", finalPrompt, "--output-format", "stream-json", "--verbose"],
+              { cwd: projectRoot, env: process.env }
+            );
+            child.stdout.on("data", (chunk) => {
+              const text = chunk.toString();
+              for (const line of text.split("\n")) {
+                if (!line.trim()) continue;
+                try {
+                  const evt = JSON.parse(line);
+                  send("claude", evt);
+                } catch {
+                  send("log", { text: line });
+                }
+              }
+            });
+            child.stderr.on("data", (chunk) => {
+              send("stderr", { text: chunk.toString() });
+            });
+            child.on("close", (code) => {
+              send("done", { exitCode: code });
+              res.end();
+            });
+            child.on("error", (err) => {
+              send("error", { message: err.message, hint: `Is "${claudeBin}" on PATH?` });
+              res.end();
+            });
+          } catch (err) {
+            send("error", { message: err?.message ?? "spawn failed" });
+            res.end();
+          }
+        });
+      });
+    },
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        if (!enabled) return html;
+        if (process.env.NODE_ENV === "production") return html;
+        const tag = `<script type="module">${CLIENT_BUNDLE}</script>`;
+        return html.includes("</body>") ? html.replace("</body>", `${tag}
+</body>`) : html + tag;
+      }
+    }
+  };
+}
+function buildPrompt(p) {
+  const fileLine = p.file ? `${p.file}${p.line ? `:${p.line}` : ""}${p.column ? `:${p.column}` : ""}` : "(file unknown \u2014 search by classes/text)";
+  return `[clickedit] The user clicked an element in their dev browser and wants you to edit it.
+
+ELEMENT
+- Source: ${fileLine}
+- Tag: <${p.tag ?? "unknown"}>
+- Classes: ${p.classes || "(none)"}
+- Text: ${truncate(p.text ?? "", 200)}
+- Page: ${p.pageUrl ?? "(unknown)"}
+- Outer HTML (truncated):
+\`\`\`html
+${truncate(p.outerHtml ?? "", 800)}
+\`\`\`
+
+USER REQUEST
+${p.prompt}
+
+INSTRUCTIONS
+1. Open the source file (read it first if you don't have it in context).
+2. Locate the exact element using the classes / text / outerHtml above.
+3. Apply the requested change.
+4. Follow the project's CLAUDE.md, MEMORY.md, and skills \u2014 bento style, liquid motion, never raw strings for enums, RTL-aware, no drop-shadows, etc.
+5. Make the smallest precise edit. Do not refactor unrelated code.
+6. When done, briefly say what you changed.`;
+}
+function truncate(s, n) {
+  if (!s) return "";
+  return s.length > n ? s.slice(0, n) + "\u2026" : s;
+}
+var plugin_default = clickedit;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  clickedit
+});

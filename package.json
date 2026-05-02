@@ -1,0 +1,54 @@
+{
+    "name": "clickedit",
+    "version": "0.1.0",
+    "description": "Click any element in your dev browser, describe the change, Claude Code edits the right file. A lightweight visual-edit bridge for React + Inertia + Vite that talks straight to your local Claude Code subscription.",
+    "keywords": [
+        "vite-plugin",
+        "react",
+        "inertia",
+        "laravel",
+        "claude-code",
+        "visual-editor",
+        "ai",
+        "dev-tool"
+    ],
+    "type": "module",
+    "main": "./dist/plugin.cjs",
+    "module": "./dist/plugin.js",
+    "types": "./dist/plugin.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/plugin.js",
+            "require": "./dist/plugin.cjs",
+            "types": "./dist/plugin.d.ts"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "node build.mjs",
+        "dev": "node build.mjs --watch",
+        "prepublishOnly": "npm run build"
+    },
+    "peerDependencies": {
+        "vite": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
+    },
+    "devDependencies": {
+        "esbuild": "^0.24.0",
+        "typescript": "^5.6.0",
+        "vite": "^7.0.0"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/00bx/clickedit.git"
+    },
+    "homepage": "https://github.com/00bx/clickedit#readme",
+    "bugs": "https://github.com/00bx/clickedit/issues",
+    "engines": {
+        "node": ">=18"
+    }
+}
