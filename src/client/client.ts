@@ -458,6 +458,11 @@ async function sendEdit(prompt: string, submitBtn: HTMLButtonElement, output: HT
     }
 }
 
+function truncate(s: string, n: number): string {
+    if (!s) return '';
+    return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
 function escapeHtml(s: string): string {
     return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
