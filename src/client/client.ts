@@ -16,9 +16,6 @@ import { injectStyles } from './styles.js';
 import { getFiberSource } from './fiber.js';
 
 const ENDPOINT = '/__clickedit/edit';
-// Session-only hide — refresh always brings the toolbar back so users never
-// get stuck without a way to reach it.
-const SESSION_HIDE_KEY = 'clickedit:hidden';
 
 interface CapturedElement {
     el: HTMLElement;
@@ -50,7 +47,7 @@ function init() {
 function mountToolbar() {
     // Auto-clear any stale "permanent hide" from older clickedit versions
     try { localStorage.removeItem('clickedit:enabled'); } catch {}
-    if (sessionStorage.getItem(SESSION_HIDE_KEY) === '1') return;
+    try { sessionStorage.removeItem('clickedit:hidden'); } catch {}
 
     const bar = document.createElement('div');
     bar.id = 'clickedit-toolbar';
@@ -72,17 +69,14 @@ function mountToolbar() {
     bar.querySelector('.ce-prompt-now')!.addEventListener('click', () => {
         if (selection.length > 0) openModal();
     });
-    bar.querySelector('.ce-close')!.addEventListener('click', () => {
-        bar.remove();
-        sessionStorage.setItem(SESSION_HIDE_KEY, '1');
-    });
+    // Hide for this view only (in-memory). Refresh always brings it back.
+    bar.querySelector('.ce-close')!.addEventListener('click', () => bar.remove());
 }
 
 // Make sure the toolbar is on screen — call this whenever a keyboard shortcut
 // fires, so the user can never get stuck after hiding the toolbar.
 function ensureToolbar() {
     if (document.getElementById('clickedit-toolbar')) return;
-    sessionStorage.removeItem(SESSION_HIDE_KEY);
     mountToolbar();
 }
 
